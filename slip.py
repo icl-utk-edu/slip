@@ -163,7 +163,7 @@ def pushd(dir):
 
 def varrepl(s, vs={}):
     """ replace variables in string """
-    for k, v in (VARS | vs).items():
+    for k, v in { **VARS, **vs }.items():
         s = s.replace(f"$[{k}]", v)
     return s
 

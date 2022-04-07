@@ -39,3 +39,18 @@ Some nice example models:
 When running a benchmark, SLIP automatically downloads and sets up the code and data.
 
 **IMPORTANT**: If you have corrupted files, or want to restart, either remove the entire `./cache` directory (all datasets/models), or a specific ID within that directory
+
+## Machine-Specific
+
+### ICL's guyot
+
+To run on guyot (ICL's DGX machine), you will need to:
+
+```shell
+# load python
+$ spack load /ka3q4il
+```
+
+NOTE: you may need to load other packages, depending on what libraries the model you're running requires
+
+
