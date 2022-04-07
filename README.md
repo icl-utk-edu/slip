@@ -28,3 +28,5 @@ $ python3 slip.py run CloudMask-0
 ```
 
 When running a benchmark, SLIP automatically downloads and sets up the code and data.
+
+**IMPORTANT**: If you have corrupted files, or want to restart, either remove the entire `./cache` directory (all datasets/models), or a specific ID within that directory
