@@ -1,0 +1,22 @@
+{
+    "id": "test-mnist-keras",
+    "author": "https://github.com/icl-utk-edu/slip",
+    "url": "https://github.com/icl-utk-edu/slip/blob/main/test/mnist-keras.py",
+    "description": "Simple smoke test on the MNIST dataset",
+
+    "datasets": [],
+
+    "clone": {
+        "git": {
+            "url": "https://github.com/icl-utk-edu/slip.git"
+        }
+    },
+    
+    "setup": [
+        "pip3 install tensorflow tensorflow-datasets"
+    ],
+
+    "run": [
+        "python3 examples/mnist-keras.py"
+    ]
+}

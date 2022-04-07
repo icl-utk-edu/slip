@@ -1,0 +1,26 @@
+{
+    "id": "CloudMask-0",
+    "author": "https://github.com/stfc-sciml",
+    "url": "https://github.com/stfc-sciml/sciml-bench/tree/master/sciml_bench/benchmarks/slstr_cloud",
+    "description": "This benchmark focuses on using a machine learning-based model for masking clouds, in the Sentinel-3 satellite, which carries the Sea and Land Surface Temperature Radiometer (SLSTR) instrument. More specifically, the benchmark operates on multispectral image data. The baseline implementation is a variation of the U-Net deep neural network.",
+
+    "datasets": [
+        "slstr_cloud_ds1"
+    ],
+
+    "clone": {
+        "git": {
+            "url": "https://github.com/stfc-sciml/sciml-bench.git"
+        }
+    },
+    
+    "setup": [
+        "pip3 install -r requirements.txt",
+        "pip3 install horovod sklearn"
+    ],
+
+    "run": [
+        "python3 -msciml_bench.core.command about",
+        "python3 -msciml_bench.core.command run slstr_cloud --output_dir out --dataset_dir $[DATASET]"
+    ]
+}
