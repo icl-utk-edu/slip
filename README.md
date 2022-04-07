@@ -23,9 +23,18 @@ $ pip3 install -r requirements.txt
 To actually run a benchmark, type:
 
 ```sh
-$ python3 slip.py run CloudMask-0
-... (lots of output, perhaps errors)
+$ python3 slip.py run test-mnist-keras
+...
+[==============================] - 1s 1ms/step - loss: 0.1663 - sparse_categorical_accuracy: 0.9524 - val_loss: 0.1478 - val_sparse_categorical_accuracy: 0.9552
+Epoch 3/6
+...
 ```
+
+Some nice example models:
+
+  * `python3 slip.py run test-mnist-keras`: simple, fast example using MNIST
+  * `python3 slip.py run CloudMask-0`: implementation of a real-world scientific benchmark (**requires 180GB of disk usage**)
+
 
 When running a benchmark, SLIP automatically downloads and sets up the code and data.
 

@@ -17,6 +17,6 @@
     ],
 
     "run": [
-        "python3 examples/mnist-keras.py"
+        "python3 test/mnist-keras.py"
     ]
 }
