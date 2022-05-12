@@ -17,6 +17,6 @@
     ],
 
     "run": [
-        "!sabath python3 test/mnist-keras.py"
+        "python3 test/mnist-keras.py"
     ]
 }

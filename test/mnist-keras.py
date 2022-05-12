@@ -11,6 +11,8 @@ shamelessly stolen from: https://www.tensorflow.org/datasets/keras_example
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
+
+
 (ds_train, ds_test), ds_info = tfds.load(
     'mnist',
     split=['train', 'test'],
@@ -41,6 +43,7 @@ model = tf.keras.models.Sequential([
   tf.keras.layers.Dense(128, activation='relu'),
   tf.keras.layers.Dense(10)
 ])
+
 model.compile(
     optimizer=tf.keras.optimizers.Adam(0.001),
     loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
