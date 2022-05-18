@@ -194,6 +194,8 @@ class Report():
 
         # set up environment variables
         os.environ['SABATH_REPORT'] = self.path
+        # add to the python path, so imports in child programs work
+        os.environ['PYTHONPATH'] = os.getenv("PYTHONPATH", "") + ":" + SABATH_DIR
 
         """ save the report to a directory """
         with open(f"{self.path}/model.json", "w") as f:
