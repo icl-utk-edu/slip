@@ -3,15 +3,52 @@
 SABATH is a is a software ecosystem for downloading and running ML/AI benchmarks, which produces a report that can be used to reproduce the results.
 
 
+## Setup
+
+To set up, run:
+
+```shell
+$ pip3 install -r requirements.txt
+```
+
+I also have a setup script for ICL's guyot machine:
+
+```shell
+# load my packages
+$ source ~cade/load_guyot.sh
+```
+
+NOTE: other packages may need to be loaded for models that use other tech stacks
+
+
 ## Usage
+
+To run a report of SABATH, you use the `run <id>` syntax. Currently, these are stored in `db/models/<id>.json`.
+
+Some example IDs are:
+
+  * `test-mnist-keras`: A simple smoke test that runs quickly
+  * `CloudMask-0`: A more complex example that runs for a longer time, and requires ~2TB of storage for the dataset
+
 
 ```shell
 $ python3 -msabath run test-mnist-keras
 SABATH> 2022-05-17T20:50:07.829 : SABATH initialized
 ...
 SABATH> 2022-05-17T20:50:28.966 : REPORT DIRECTORY: ./report-.../
-
 ```
+
+Afterwards, all relevant information is stored in the report directory (which has a timestamp of when it was ran)
+
+To prevent re-downloading, SABATH uses a cache directory (`./cache`, which is ignored by git) to store models and datasets. If you already have a dataset downloaded, you can create a symbolic link to that other path. For example, on ICL's guyot machine, I have a `/data` directory that contains some datasets already. So, I recommend running:
+
+
+```shell
+$ ln -s /data/slstr_cloud_ds1 cache/slstr_cloud_ds1
+```
+
+To prevent re-downloading the large dataset
+
 
 ### Tensorboard
 
