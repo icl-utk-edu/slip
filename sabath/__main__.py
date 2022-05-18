@@ -9,6 +9,7 @@ import sabath
 import sys
 import logging
 import json
+import time
 
 slog = logging.getLogger(__name__)
 
@@ -20,24 +21,26 @@ def main(argv):
     except:
         raise Exception("usage: python3 slip.py run <MODELID>")
 
+
     # load the model
     try:
-        model = sabath.Model(json.load(open(f"{sabath.SABATH_DIR}/db/models/{id}.json")))
+        with open(f"{sabath.SABATH_DIR}/db/models/{id}.json") as fp:
+            model = json.load(fp)
     except:
-        slog.info(f"unknown model '{id}', try something in `./db/datasets` (for example, 'CloudMask-0')")
-        raise
+        raise Exception(f"unknown model '{id}', try something in `./db/datasets` (for example, 'CloudMask-0')")
 
-    print (repr(model))
-    
-    # download the datasets[0], if it was available
-    if model.jso['datasets']:
-        ds = sabath.Dataset(json.load(open(f"{sabath.SABATH_DIR}/db/datasets/{model.jso['datasets'][0]}.json")))
+    # load dataset, if applicable
+    if model['datasets']:
+        with open(f"{sabath.SABATH_DIR}/db/datasets/{model['datasets'][0]}.json") as fp:
+            dataset = json.load(fp)
+    else:
+        dataset = None
 
-        # download the dataset
-        ds.download()
+    # create report
+    report = sabath.Report(f"./report-{id}-{int(time.time())}", model, dataset)
 
-    # run the model, after the dataset has been downloaded
-    model.run()
+    # run the report
+    report.run()
 
 
 if __name__ == '__main__':

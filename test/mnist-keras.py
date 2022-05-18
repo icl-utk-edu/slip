@@ -11,7 +11,10 @@ shamelessly stolen from: https://www.tensorflow.org/datasets/keras_example
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
+# import our sabath utility
+import sabath
 
+callbacks = sabath.setup_tensorflow()
 
 (ds_train, ds_test), ds_info = tfds.load(
     'mnist',
@@ -50,9 +53,11 @@ model.compile(
     metrics=[tf.keras.metrics.SparseCategoricalAccuracy()],
 )
 
+
 model.fit(
     ds_train,
     epochs=6,
     validation_data=ds_test,
+    callbacks=callbacks
 )
 

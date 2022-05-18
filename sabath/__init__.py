@@ -6,7 +6,8 @@
 import os
 import sys
 import datetime
-
+import subprocess
+import shlex
 import json
 
 # for 'with' blocks
@@ -15,8 +16,6 @@ import contextlib
 import logging
 
 logging.basicConfig(format="SABATH> %(asctime)s.%(msecs)03d : %(message)s", datefmt="%Y-%m-%dT%H:%M:%S", level=logging.INFO)
-
-slog = logging.getLogger(__name__)
 
 
 SABATH_DIR = os.getenv("SABATH_DIR")
@@ -32,14 +31,10 @@ VARS = {
 }
 
 
-
-
 """logging.debug('This message should appear on the console')
 logging.info('So should this')
 logging.warning('And this, too')
 """
-
-slog.info("SABATH initialized")
 
 
 #VARS = {
@@ -53,21 +48,6 @@ def varrepl(s, vs={}):
         s = s.replace(f"$[{k}]", v)
     return s
 
-def runsh(cmd, vs={}):
-    """Runs a shell command, throw an exception if it fails"""
-    if isinstance(cmd, list):
-        # list of commands, so run them all
-        for c in cmd:
-            runsh(c, vs)
-    else:
-        # assume string command
-        slog.info(f"SHELL> {cmd}")
-        #slog(f"running: {cmd}")
-        cmd = varrepl(cmd, vs)
-        res = os.system(cmd)
-        if res != 0:
-            slog(f"command failed: {cmd} (in {os.getcwd()})")
-            raise Exception(f"command failed: {cmd}")
 
 
 # pushes directory and automatically pops it
@@ -82,38 +62,73 @@ def pushd(dir):
         os.chdir(prevdir)
 
 
-class Model():
+class Report():
     """
-    A model is a any sort of machine learning model that can be ran, which has machine-readable instructions for every step
+    A report is a run of a model (and optionally a dataset) that records metadata, launch configuration, and results
 
-    This class is a handle to a DB/JSON entry
+    This includes:
+      * metadata (as JSON files)
+      * launch configuration
+      * results (as JSON files)
+      * logs (as JSON files)
+      * result data (as JSON/HDF files)
+      * artifacts, such as model weights/architectures
+
     """
 
-    # create from JSON
-    def __init__(self, jso):
-        self.jso = jso
+    def __init__(self, path, model, dataset=None) -> None:
+        self.path = os.path.realpath(path)
+        self.model = model
+        self.dataset = dataset
+        self.log = None
 
-    def __repr__(self) -> str:
-        return f"slip.Model({json.dumps(self.jso, indent=4)})"
-
-    def __str__(self) -> str:
-        return f"<slip.Model {self.jso['id']!r}>"
-
-    # return directory where the model should be
-    def getdir(self):
-        return f"{SABATH_DIR}/cache/{self.jso['id']}"
-
-    def clone(self):
-        gd = self.getdir()
+    def download(self):
+        gd = f"{SABATH_DIR}/cache/{self.dataset['id']}"
         if os.path.exists(gd):
             return gd
 
-        slog.info(f"CLONE {self.jso['id']} ...")
-        #slog(f"CLONE {self.jso['id']} ...")
+        self.log.info(f"DOWNLOAD {self.dataset['id']} ...")
 
         # try and clone it
         try:
-            runsh(f"git clone {self.jso['clone']['git']['url']} {gd}")
+            DL = self.dataset['download']
+
+            if 'git' in DL:
+                self.runsh(f"git clone {DL['git']['url']} {gd}")
+
+                # now, run steps to intiialize it
+                with pushd(gd):
+                    self.runsh(DL['git']['steps'])
+
+            elif 'shell' in DL:
+                # just run the shell script, period
+                os.makedirs(gd, exist_ok=True)
+                with pushd(gd):
+                    self.runsh(DL['shell'])
+            else:
+                raise Exception("Unknown download type! (had no 'git' or 'shell' keys)")
+
+        except Exception as e:
+            # delete it, if a failure occured
+            try:
+                os.rmdir(gd)
+            except:
+                pass
+            raise e
+        return gd
+
+
+    def clone(self):
+        gd = f"{SABATH_DIR}/cache/{self.model['id']}"
+        if os.path.exists(gd):
+            return gd
+
+        self.log.info(f"CLONE {self.model['id']} ...")
+        #self.log(f"CLONE {self.jso['id']} ...")
+
+        # try and clone it
+        try:
+            self.runsh(f"git clone {self.model['clone']['git']['url']} {gd}")
         except Exception as e:
             # delete it, if a failure occured
             try:
@@ -132,11 +147,11 @@ class Model():
         if os.path.exists(cachefile):
             return gd
 
-        slog.info(f"SETUP {self.jso['id']} ...")
+        self.log.info(f"SETUP {self.model['id']} ...")
 
         with pushd(gd):
             # run setup script, while in the directory
-            runsh(self.jso['setup'])
+            self.runsh(self.model['setup'])
 
             # create an empty file to indicate that the model has been setup
             with open(cachefile, 'w') as fp:
@@ -144,72 +159,77 @@ class Model():
         
         return gd
 
+    def runsh(self, cmds, vs={}):
+        """Runs a shell command, throw an exception if it fails"""
+        if not isinstance(cmds, list):
+            cmds = [cmds]
+
+        with open(f'{self.path}/stdout.txt', 'a') as out_, open(f'{self.path}/stderr.txt', 'a') as err_:
+            for cmd in cmds:
+                self.log.info(f"SHELL> {cmd}")
+                #self.log(f"running: {cmd}")
+                cmd = varrepl(cmd, vs)
+                res = subprocess.call(shlex.split(cmd), stdout=out_, stderr=err_)
+                if res != 0:
+                    self.log.error(f"command failed: {cmd} (in {os.getcwd()})")
+                    raise Exception(f"command failed: {cmd}")
+
+            """
+
+            res = os.system(cmd)
+            if res != 0:
+                self.log.error(f"command failed: {cmd} (in {os.getcwd()})")
+                raise Exception(f"command failed: {cmd}")
+            """
+
     def run(self):
-        # make sure we are set up
+        os.makedirs(self.path, exist_ok=True)
+
+        # start the report, setting up the logger
+        self.log = logging.getLogger("sabath.report")
+        fh = logging.FileHandler(f"{self.path}/log.txt")
+        fh.setLevel(logging.DEBUG)
+        self.log.addHandler(fh)
+        self.log.info(f"START report: {self.path}")
+
+        # set up environment variables
+        os.environ['SABATH_REPORT'] = self.path
+
+        """ save the report to a directory """
+        with open(f"{self.path}/model.json", "w") as f:
+            json.dump(self.model, f, indent=4)
+        if self.dataset:
+            with open(f"{self.path}/dataset.json", "w") as f:
+                json.dump(self.dataset, f, indent=4)
+
+        # download dataset, if required
+        if self.dataset:
+            self.download()
+
+        # make sure we are set up with the model
         gd = self.setup()
 
-        slog.info(f"RUN {self.jso['id']} ...")
-
         # run the commands
+        self.log.info(f"RUN {self.model['id']} ...")
         with pushd(gd):
             # give dataset location
             vs = {}
-            if self.jso['datasets']:
-                vs['DATASET'] = f"{SABATH_DIR}/cache/{self.jso['datasets'][0]}/data"
-            runsh(self.jso['run'], vs)
+            if self.model['datasets']:
+                vs['DATASET'] = f"{SABATH_DIR}/cache/{self.model['datasets'][0]}"
+            self.runsh(self.model['run'], vs)
 
-class Dataset():
-    """
-    A dataset is a collection of files, which can be downloaded and used by a model
-    
-    This class is a handle to a DB/JSON entry
-    """
+        # stop the report
+        self.log.info(f"REPORT DIRECTORY: {self.path}")
 
-    # create from JSON
-    def __init__(self, jso):
-        self.jso = jso
 
-    def __repr__(self) -> str:
-        return f"slip.Dataset({json.dumps(self.jso, indent=4)})"
+def setup_tensorflow():
+    import tensorflow as tf
 
-    def __str__(self) -> str:
-        return f"<slip.Dataset {self.jso['id']!r}>"
+    # report directory
+    reportdir = os.getenv('SABATH_REPORT')
+    print("SABATH SETUP TENSORFLOW: ", reportdir)
 
-    # return directory where the model should be
-    def getdir(self):
-        return f"{SABATH_DIR}/cache/{self.jso['id']}"
-
-    def download(self):
-        gd = self.getdir()
-        if os.path.exists(gd):
-            return gd
-        
-        slog.info(f"DOWNLOAD {self.jso['id']} ...")
-
-        # try and clone it
-        try:
-            DL = self.jso['download']
-
-            if 'git' in DL:
-                runsh(f"git clone {DL['git']['url']} {gd}")
-
-                # now, run steps to intiialize it
-                with pushd(gd):
-                    runsh(DL['git']['steps'])
-
-            elif 'shell' in DL:
-                # just run the shell script, period
-                os.makedirs(gd, exist_ok=True)
-                with pushd(gd):
-                    runsh(DL['shell'])
-            else:
-                raise Exception("Unknown download type! (had no 'git' or 'shell' keys)")
-
-        except Exception as e:
-            # delete it, if a failure occured
-            try:
-                os.rmdir(gd)
-            except:
-                pass
-            raise e
-        return gd
+    # set up the logger
+    logdir = f"{reportdir}/tensorboard"
+    callback = tf.keras.callbacks.TensorBoard(log_dir=logdir)
+    return [callback]

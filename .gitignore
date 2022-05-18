@@ -3,6 +3,8 @@
 cache/
 
 
+# SABATH generated reports
+report-*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

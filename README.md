@@ -1,9 +1,28 @@
 # SABATH
 
-SABATH is a 
+SABATH is a is a software ecosystem for downloading and running ML/AI benchmarks, which produces a report that can be used to reproduce the results.
 
 
+## Usage
 
+```shell
+$ python3 -msabath run test-mnist-keras
+SABATH> 2022-05-17T20:50:07.829 : SABATH initialized
+...
+SABATH> 2022-05-17T20:50:28.966 : REPORT DIRECTORY: ./report-.../
+
+```
+
+### Tensorboard
+
+For visualization with Tensorboard, specifically on a remote server, you can use the following command:
+
+```shell 
+# forward port 9999 to your local machine
+$ ssh -L 9999:127.0.0.1:9999 user@guyot.icl.utk.edu
+# run visualization from the report's tensorboard directory
+$ tensorboard --port 9999 --logdir ./report-.../tensorboard
+```
 
 # OLD PROTOTYPE - slip
 
