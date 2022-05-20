@@ -23,13 +23,30 @@ NOTE: other packages may need to be loaded for models that use other tech stacks
 
 ## Usage
 
-To run a report of SABATH, you use the `run <id>` syntax. Currently, these are stored in `db/models/<id>.json`.
+To view the usage, you can run with `--help`:
 
-Some example IDs are:
+```shell
+$ python3 -msabath --help              
+usage: __main__.py [-h] [--cache CACHE] {run} ...
 
-  * `test-mnist-keras`: A simple smoke test that runs quickly
+SABATH: a platform for running ML surrogate models
+
+positional arguments:
+  {run}          sub-commands help
+    run          run a model, producing a report
+
+optional arguments:
+  -h, --help     show this help message and exit
+  --cache CACHE  cache directory, for storing models and datasets
+
+```
+
+Some example model IDs are:
+
+  * `test-mnist-keras`: A simple smoke test that runs quickly (also, shows how to record visualization data for Tensorboard)
   * `CloudMask-0`: A more complex example that runs for a longer time, and requires ~2TB of storage for the dataset
 
+### Example
 
 ```shell
 $ python3 -msabath run test-mnist-keras
@@ -40,14 +57,14 @@ SABATH> 2022-05-17T20:50:28.966 : REPORT DIRECTORY: ./report-.../
 
 Afterwards, all relevant information is stored in the report directory (which has a timestamp of when it was ran)
 
-To prevent re-downloading, SABATH uses a cache directory (`./cache`, which is ignored by git) to store models and datasets. If you already have a dataset downloaded, you can create a symbolic link to that other path. For example, on ICL's guyot machine, I have a `/data` directory that contains some datasets already. So, I recommend running:
+To prevent re-downloading, SABATH uses a cache directory (`./.sabath`, by default, which is ignored by git) to store models and datasets. If you already have a dataset downloaded, you can create a symbolic link to that other path. For example, on ICL's guyot machine, I have a `/data` directory that contains some datasets already. So, I recommend running:
 
 
 ```shell
-$ ln -s /data/slstr_cloud_ds1 cache/slstr_cloud_ds1
+$ ln -s /data/slstr_cloud_ds1 ./.sabath/slstr_cloud_ds1
 ```
 
-To prevent re-downloading the large dataset
+To prevent re-downloading the large dataset. You can also specify running with different cache directories with `--cache` option
 
 
 ### Tensorboard

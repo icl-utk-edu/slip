@@ -3,23 +3,49 @@
 @author: Cade Brown <cade@utk.edu>
 """
 
+from genericpath import exists
+from operator import truediv
 import sabath
-
 
 import sys
 import logging
 import json
 import time
+import os
+
+import argparse
 
 slog = logging.getLogger(__name__)
 
 def main(argv):
+    
+    parser = argparse.ArgumentParser(description='SABATH: a platform for running ML surrogate models')
+    parser.add_argument('--cache', help='cache directory, for storing models and datasets', default=None)
+
+    subparsers = parser.add_subparsers(help='sub-commands help')
+
+    parser_a = subparsers.add_parser('run', help='run a model, producing a report')
+    parser_a.add_argument('model', help='model to run')
+
     # TODO: parse arguments
-    try:
-        assert argv[1] == 'run'
-        id = argv[2]
-    except:
-        raise Exception("usage: python3 slip.py run <MODELID>")
+    args = parser.parse_args(argv[1:])
+
+    # store variables
+    if args.cache is not None:
+        sabath.SABATH_CACHE = args.cache
+    elif sabath.SABATH_CACHE is None:
+        # we need a default, so choose the sabath directory itself
+        sabath.SABATH_CACHE = os.getenv("SABATH_CACHE", os.path.join(sabath.SABATH_DIR, ".sabath"))
+
+    # make the directory if needs to
+    os.makedirs(sabath.SABATH_CACHE, exists_ok=True)
+
+    id = args.model
+    #try:
+    #    assert argv[1] == 'run'
+    #    id = argv[2]
+    #except:
+    #    raise Exception("usage: python3 slip.py run <MODELID>")
 
 
     # load the model

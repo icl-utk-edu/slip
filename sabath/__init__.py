@@ -18,12 +18,15 @@ import logging
 logging.basicConfig(format="SABATH> %(asctime)s.%(msecs)03d : %(message)s", datefmt="%Y-%m-%dT%H:%M:%S", level=logging.INFO)
 
 
-SABATH_DIR = os.getenv("SABATH_DIR")
+# cache directory (this should be set in 'main', or by another script..)
+SABATH_CACHE = None
 
+
+# initialize environment variables
+SABATH_DIR = os.getenv("SABATH_DIR")
 if SABATH_DIR is None:
     # use the directory
     SABATH_DIR = str(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-
 
 
 VARS = {
@@ -50,17 +53,6 @@ def varrepl(s, vs={}):
 
 
 
-# pushes directory and automatically pops it
-# NOTE: use in 'with' block
-@contextlib.contextmanager
-def pushd(dir):
-    prevdir = os.getcwd()
-    os.chdir(dir)
-    try:
-        yield
-    finally:
-        os.chdir(prevdir)
-
 
 class Report():
     """
@@ -83,7 +75,7 @@ class Report():
         self.log = None
 
     def download(self):
-        gd = f"{SABATH_DIR}/cache/{self.dataset['id']}"
+        gd = f"{SABATH_CACHE}/{self.dataset['id']}"
         if os.path.exists(gd):
             return gd
 
@@ -97,13 +89,13 @@ class Report():
                 self.runsh(f"git clone {DL['git']['url']} {gd}")
 
                 # now, run steps to intiialize it
-                with pushd(gd):
+                with self.pushd(gd):
                     self.runsh(DL['git']['steps'])
 
             elif 'shell' in DL:
                 # just run the shell script, period
                 os.makedirs(gd, exist_ok=True)
-                with pushd(gd):
+                with self.pushd(gd):
                     self.runsh(DL['shell'])
             else:
                 raise Exception("Unknown download type! (had no 'git' or 'shell' keys)")
@@ -119,8 +111,12 @@ class Report():
 
 
     def clone(self):
-        gd = f"{SABATH_DIR}/cache/{self.model['id']}"
+
+
+        gd = f"{SABATH_CACHE}/{self.model['id']}"
         if os.path.exists(gd):
+            self.log.info(f"UPDATE {self.model['id']} ...")
+            self.runsh(f"cd {gd} && git pull")
             return gd
 
         self.log.info(f"CLONE {self.model['id']} ...")
@@ -149,7 +145,7 @@ class Report():
 
         self.log.info(f"SETUP {self.model['id']} ...")
 
-        with pushd(gd):
+        with self.pushd(gd):
             # run setup script, while in the directory
             self.runsh(self.model['setup'])
 
@@ -158,6 +154,19 @@ class Report():
                 pass
         
         return gd
+
+    # pushes directory and automatically pops it
+    # NOTE: use in 'with' block
+    @contextlib.contextmanager
+    def pushd(self, dir):
+        prevdir = os.getcwd()
+        os.chdir(dir)
+        self.log.info(f"ENTER: {dir}")
+        try:
+            yield
+        finally:
+            self.log.info(f"EXIT: {dir}")
+            os.chdir(prevdir)
 
     def runsh(self, cmds, vs={}):
         """Runs a shell command, throw an exception if it fails"""
@@ -171,8 +180,8 @@ class Report():
                 cmd = varrepl(cmd, vs)
                 res = subprocess.call(shlex.split(cmd), stdout=out_, stderr=err_)
                 if res != 0:
-                    self.log.error(f"command failed: {cmd} (in {os.getcwd()})")
-                    raise Exception(f"command failed: {cmd}")
+                    self.log.error(f"command failed: {cmd} (in {os.getcwd()}) (check {self.path}/stderr.txt)")
+                    raise Exception(f"command failed: {cmd} (in {os.getcwd()}) (check {self.path}/stderr.txt)")
 
             """
 
@@ -213,11 +222,11 @@ class Report():
 
         # run the commands
         self.log.info(f"RUN {self.model['id']} ...")
-        with pushd(gd):
+        with self.pushd(gd):
             # give dataset location
             vs = {}
             if self.model['datasets']:
-                vs['DATASET'] = f"{SABATH_DIR}/cache/{self.model['datasets'][0]}"
+                vs['DATASET'] = f"{SABATH_CACHE}/{self.model['datasets'][0]}"
             self.runsh(self.model['run'], vs)
 
         # stop the report
