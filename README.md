@@ -11,11 +11,11 @@ To set up, run:
 $ pip3 install -r requirements.txt
 ```
 
-I also have a setup script for ICL's guyot machine:
+I also have a setup script for our test machine:
 
 ```shell
 # load my packages
-$ source ~cade/load_guyot.sh
+$ source ~mylogin/load_<SERVER>.sh
 ```
 
 NOTE: other packages may need to be loaded for models that use other tech stacks
@@ -57,7 +57,7 @@ SABATH> 2022-05-17T20:50:28.966 : REPORT DIRECTORY: ./report-.../
 
 Afterwards, all relevant information is stored in the report directory (which has a timestamp of when it was ran)
 
-To prevent re-downloading, SABATH uses a cache directory (`./.sabath`, by default, which is ignored by git) to store models and datasets. If you already have a dataset downloaded, you can create a symbolic link to that other path. For example, on ICL's guyot machine, I have a `/data` directory that contains some datasets already. So, I recommend running:
+To prevent re-downloading, SABATH uses a cache directory (`./.sabath`, by default, which is ignored by git) to store models and datasets. If you already have a dataset downloaded, you can create a symbolic link to that other path. For example, on our test machine, I have a `/data` directory that contains some datasets already. So, I recommend running:
 
 
 ```shell
@@ -73,7 +73,7 @@ For visualization with Tensorboard, specifically on a remote server, you can use
 
 ```shell 
 # forward port 9999 to your local machine
-$ ssh -L 9999:127.0.0.1:9999 user@guyot.icl.utk.edu
+$ ssh -L 9999:127.0.0.1:9999 user@SERVER.DEPARTMENT.utk.edu
 # run visualization from the report's tensorboard directory
 $ tensorboard --port 9999 --logdir ./report-.../tensorboard
 ```
@@ -122,15 +122,13 @@ When running a benchmark, SLIP automatically downloads and sets up the code and 
 
 ## Machine-Specific
 
-### ICL's guyot
+### Our test machine
 
-To run on guyot (ICL's DGX machine), you will need to:
+To run on test machine (our test machine), you will need to:
 
 ```shell
 # load my packages
-$ source ~cade/load_guyot.sh
+$ source ~mylogin/load_<SERVER>.sh
 ```
 
 NOTE: you may need to load other packages, depending on what libraries the model you're running requires
-
-
